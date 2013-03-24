@@ -5,6 +5,7 @@ import qualified Data.ByteString.Char8 as BS
 import Test.HUnit
 import Test.Framework as TF (defaultMain, testGroup, Test)
 import Test.Framework.Providers.HUnit
+import System.Timeout
 
 main :: IO ()
 main = defaultMain tests
@@ -12,24 +13,42 @@ main = defaultMain tests
 tests :: [TF.Test]
 tests = [
   testGroup "Dialogue smoke tests" [
-     testCase "Maybe listen shall be nothing if no data" nothingIfNoData
+     testCase "Listen shall timeout if no data" timeoutIfNoData
      , testCase "Listen shall return what echo is told" asEchoIsTold
+     , testCase "Shall follow conversation" followConversation
      ]
   ]
         
-nothingIfNoData :: Assertion
-nothingIfNoData = do
+timeoutIfNoData :: Assertion
+timeoutIfNoData = do
   d <- open echoProgram []
-  v <- maybeListen d
-  assertEqual "Shall be Nothing" v Nothing
+  v <- timeout shortTimeout $ listen d
+  assertEqual "Shall be nothing" v Nothing
   
 asEchoIsTold :: Assertion
 asEchoIsTold = do
   d <- open echoProgram []
-  let s = BS.pack "a string of text"
+  let s = echoString 0
   tell d s
   s' <- listen d
   assertEqual "Shall be equal" s s'
   
+followConversation :: Assertion  
+followConversation = do
+  d <- open echoProgram []
+  let ss = map echoString [0..100]
+  mapM_ (talk d) ss
+  where
+    talk :: Dialogue -> BS.ByteString -> Assertion
+    talk d s = do
+      tell d s
+      listen d >>= assertEqual "Shall be equal" s
+  
 echoProgram :: String
 echoProgram = "./dist/build/Echo/Echo"
+
+shortTimeout :: Int
+shortTimeout = 1000 * 50 -- 50 ms
+
+echoString :: Int -> BS.ByteString
+echoString n = BS.pack $ "A string of text #" ++ show n

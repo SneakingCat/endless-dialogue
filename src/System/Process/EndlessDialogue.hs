@@ -3,7 +3,6 @@ module System.Process.EndlessDialogue (
   , open
   , tell
   , listen
-  , maybeListen
   ) where
 
 import System.Process (ProcessHandle, waitForProcess, runInteractiveProcess)
@@ -51,10 +50,6 @@ tell (Dialogue _ vIn _) = putMVar vIn
 -- | Blocking listen to the dialogue
 listen :: Dialogue -> IO (BS.ByteString)
 listen (Dialogue _ _ vOut) = takeMVar vOut
-
--- | Listen non-blocking to the dialogue
-maybeListen :: Dialogue -> IO (Maybe BS.ByteString)
-maybeListen (Dialogue _ _ vOut) = tryTakeMVar vOut
 
 -- | Supervise a started external program. Signal to the user with an
 -- io error
