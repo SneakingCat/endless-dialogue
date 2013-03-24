@@ -16,6 +16,7 @@ tests = [
      testCase "Listen shall timeout if no data" timeoutIfNoData
      , testCase "Listen shall return what echo is told" asEchoIsTold
      , testCase "Shall follow conversation" followConversation
+     , testCase "Shall follow bursty conversation" followBurstyConversation
      ]
   ]
         
@@ -42,6 +43,17 @@ followConversation = do
     talk :: Dialogue -> BS.ByteString -> Assertion
     talk d s = do
       tell d s
+      listen d >>= assertEqual "Shall be equal" s
+  
+followBurstyConversation :: Assertion
+followBurstyConversation = do
+  d <- open echoProgram []
+  let ss = map echoString [0..100]
+  mapM_ (tell d) ss
+  mapM_ (listenAndTest d) ss
+  where
+    listenAndTest :: Dialogue -> BS.ByteString -> Assertion
+    listenAndTest d s = do
       listen d >>= assertEqual "Shall be equal" s
   
 echoProgram :: String
