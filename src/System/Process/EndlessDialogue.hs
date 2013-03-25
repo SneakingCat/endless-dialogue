@@ -8,9 +8,7 @@ module System.Process.EndlessDialogue (
 import System.Process (ProcessHandle, waitForProcess, runInteractiveProcess)
 import System.Exit (ExitCode(..))
 import System.IO (Handle, hSetBinaryMode, hWaitForInput, hFlush)
-import System.IO.Error (IOError, userError)
-import Control.Concurrent (MVar, forkIO, newEmptyMVar, putMVar, 
-                           takeMVar, tryTakeMVar)
+import Control.Concurrent (MVar, forkIO, newEmptyMVar, putMVar, takeMVar)
 import qualified Data.ByteString.Char8 as BS
 
 type BSMVar = MVar BS.ByteString
@@ -48,7 +46,7 @@ tell :: Dialogue -> BS.ByteString -> IO ()
 tell (Dialogue _ vIn _) = putMVar vIn
 
 -- | Blocking listen to the dialogue
-listen :: Dialogue -> IO (BS.ByteString)
+listen :: Dialogue -> IO BS.ByteString
 listen (Dialogue _ _ vOut) = takeMVar vOut
 
 -- | Supervise a started external program. Signal to the user with an
@@ -62,6 +60,7 @@ supervise (Dialogue (_,_,_,pid) _ _) = do
     ExitFailure code' ->
       ioError $ errorWithCode code'
   where
+    errorWithCode :: Int -> IOError
     errorWithCode c = userError $ "Process terminated with code: " ++ show c
                          
 -- | Wait for a line of text from the user to become available. Copy
@@ -77,7 +76,7 @@ tellT d@(Dialogue (hIn,_,_,_) vIn _) = do
 -- available. Copy the content to the user.
 listenT :: Dialogue -> IO ()
 listenT d@(Dialogue (_,hOut,_,_) _ _) = do
-  hWaitForInput hOut (-1) -- Initial wait for the handle
+  _ <- hWaitForInput hOut (-1) -- Initial wait for the handle
   listenT' d
   
 listenT' :: Dialogue -> IO ()
