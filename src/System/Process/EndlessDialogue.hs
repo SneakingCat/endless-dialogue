@@ -41,11 +41,11 @@ open cmd args = do
   -- Return the dialogue to the user
   return dialogue
 
--- | Tell the dialogue a bunch of text
+-- | Tell the dialogue a line of text
 tell :: Dialogue -> BS.ByteString -> IO ()
 tell (Dialogue _ vIn _) = putMVar vIn
 
--- | Blocking listen to the dialogue
+-- | Listen to one line of text. The listen is blocking
 listen :: Dialogue -> IO BS.ByteString
 listen (Dialogue _ _ vOut) = takeMVar vOut
 
